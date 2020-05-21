@@ -8,7 +8,7 @@ config.gpu_options.per_process_gpu_memory_fraction = 0.1
 tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
 
 from keras.models import Sequential, Model, load_model
-from keras.layers import Dense, Dropout, Input, Add, Activation, BatchNormalization
+from keras.layers import Dense, Dropout, Input, Add, Activation, BatchNormalization, LSTM
 from keras.optimizers import RMSprop
 from keras.initializers import glorot_normal
 
@@ -47,27 +47,30 @@ class DQN:
         # # # # # # # build mode
         self.model        = self.build_ResNet_model() # model: evaluate Q value
         self.target_model = self.build_ResNet_model() # target_mode: target network
+        print(self.state_size)
+       #        h2 = Dense(64, activation="relu", kernel_initializer=glorot_normal(seed=2407))(h1) #h2
+#
+        ##        
+#        h5 = LSTM(64, activation="relu", kernel_initializer=glorot_normal(seed=24657),return_sequences=True)(add1) #h5
+#        h6 = LSTM(64, activation="relu", kernel_initializer=glorot_normal(seed=27567),return_sequences=True)(h5) #h6
+#        add2 = Add()([h6, add1])
 
+        # h7 = Dense(64, activation="relu", kernel_initializer=glorot_normal(seed=24657))(add2) #h5
+        # h8 = Dense(64, activation="relu", kernel_initializer=glorot_normal(seed=27567))(h7) #h6
+        # add3 = Add()([h7, add2])
     
     def build_ResNet_model(self):
-        inputs = Input(shape=(self.state_size, ))
-        leakyrelu = lambda x: tf.keras.layers.LeakyReLU(alpha=0.1)(x)
-        h1 = Dense(64, activation=leakyrelu, kernel_initializer=glorot_normal(seed=247))(inputs) #h1
-        h2 = Dense(64, activation="sigmod", kernel_initializer=glorot_normal(seed=2407))(h1) #h2
-
-        h3 = Dense(64, activation=leakyrelu, kernel_initializer=glorot_normal(seed=2403))(h2) #h3
-        h4 = Dense(64, activation="sigmod", kernel_initializer=glorot_normal(seed=24457))(h3) #h4
-        add1 = Add()([h4, h2])
+        inputs = Input(shape=(None,self.state_size))
         
-        h5 = Dense(64, activation=leakyrelu, kernel_initializer=glorot_normal(seed=24657))(add1) #h5
-        h6 = Dense(64, activation="sigmod", kernel_initializer=glorot_normal(seed=27567))(h5) #h6
-        add2 = Add()([h6, add1])
+        print(inputs)
+        h1 = LSTM(64, activation="relu", kernel_initializer=glorot_normal(seed=247),return_sequences=True)(inputs) #h1
+        h2 = Dense(64, activation="relu", kernel_initializer=glorot_normal(seed=2407))(h1) #h2 
 
-        h7 = Dense(64, activation=leakyrelu, kernel_initializer=glorot_normal(seed=24657))(add2) #h7
-        h8 = Dense(64, activation="sigmod", kernel_initializer=glorot_normal(seed=27567))(h7) #h8
-        add3 = Add()([h7, add2])
-
-        outputs =  Dense(self.n_actions, kernel_initializer=glorot_normal(seed=242147))(add3)
+        h3 = Dense(64, activation="relu", kernel_initializer=glorot_normal(seed=2403))(h2) #h3
+        h4 = Dense(64, activation="relu", kernel_initializer=glorot_normal(seed=24457))(h3) #h4
+        add1 = Add()([h4, h2])
+   
+        outputs =  Dense(self.n_actions, kernel_initializer=glorot_normal(seed=242147))(add1)
         model = Model(inputs=inputs, outputs=outputs)
         model.compile(loss="mse", optimizer=RMSprop(lr=self.learning_rate))
         return model
@@ -75,6 +78,9 @@ class DQN:
 
     def choose_action(self, state):
         state = state[np.newaxis, :]
+
+        state = state[:, np.newaxis]
+#        print("choose ",state)
         self.epsilon *= self.epsilon_decay
         self.epsilon  = max(self.epsilon_min, self.epsilon)
         if np.random.random() < self.epsilon:
@@ -119,20 +125,29 @@ class DQN:
         # batch memory row: [s, a, r1, r2, s_] 
         # number of batch memory: batch size 
         # extract state, action, reward, reward2, next_state from bathc memory
-        state      = batch_memory[:, :self.state_size]
+        state      = batch_memory[:, :self.state_size]     
+        state      = state[:,np.newaxis,:]
+#        print("learn ",state)     
         action     = batch_memory[:, self.state_size].astype(int) # float -> int
         reward     = batch_memory[:, self.state_size+1]
         next_state = batch_memory[:, -self.state_size:]
-
+  
+        next_state = next_state[:, np.newaxis,:]
+#        print(np.shape(next_state))
         q_eval = self.model.predict(state) # state
-        print("q_eval",np.shape(q_eval))
+        
+        q_eval = np.reshape(q_eval,(32,2))
+#        print("q_eval",np.shape(q_eval))
         q_next = self.target_model.predict(next_state) # next state
-        print("q_next",np.shape(q_next))
+        
+        q_next = np.reshape(q_next,(32,2))
+#        print("q_next",np.shape(q_next))
         q_target = q_eval.copy()
         batch_index = np.arange(self.batch_size, dtype=np.int32)
+#        print("batch ind ",batch_index)
         q_target[batch_index, action] =  reward + self.gamma * np.max(q_next, axis=1)        
  
-
+        q_target = q_target[:,np.newaxis,:]
         self.model.fit(state, q_target, self.batch_size, epochs=1, verbose=0)
 
     def save_model(self, fn):

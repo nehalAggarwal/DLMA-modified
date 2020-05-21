@@ -56,7 +56,7 @@ def my_plot(file1, file2, q):
 
 for i in range(1, 5):
 	plt.figure(i)
-	my_plot('rewards/agent_len1e5_M20_h6_q0.3_%d.txt' % i,
-		    'rewards/aloha_len1e5_M20_h6_q0.3_%d.txt' % i, q=0.3)
+	my_plot(f'rewards/agent_len1e5_M20_h6_q0.7_%d.txt' % i,
+		    f'rewards/aloha_len1e5_M20_h6_q0.7_%d.txt' % i, q=0.3)
 plt.show()
 

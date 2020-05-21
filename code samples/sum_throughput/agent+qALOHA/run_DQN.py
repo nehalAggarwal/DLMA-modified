@@ -1,5 +1,5 @@
-from environment import ENVIRONMENT
-from DQN_brain import DQN
+#from environment import ENVIRONMENT
+#from DQN_brain import DQN
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,10 +31,10 @@ def main(max_iter):
             dqn_agent.learn()       # internally iterates default (prediction) model
         state = next_state
 
-    with open('rewards/agent_len1e5_M20_h6_q0.7_1.txt', 'w') as my_agent:
+    with open(r"D:\uOttawa\AI enabled wireless networks\Project\DLMA-master\DLMA-master\code samples\sum_throughput\agent+qALOHA\rewards\agent_len1e5_M20_h6_q0.7_1.txt", 'w') as my_agent:
         for i in agent_reward_list:
             my_agent.write(str(i) + '   ')
-    with open('rewards/aloha_len1e5_M20_h6_q0.7_1.txt', 'w') as my_aloha:
+    with open(r"D:\uOttawa\AI enabled wireless networks\Project\DLMA-master\DLMA-master\code samples\sum_throughput\agent+qALOHA\rewards\aloha_len1e5_M20_h6_q0.7_1.txt", 'w') as my_aloha:
         for i in aloha_reward_list:
             my_aloha.write(str(i) + '   ') 
     # save model 
@@ -66,5 +66,6 @@ if __name__ == "__main__":
                     epsilon_min=0.005,
                     epsilon_decay=0.995,
                     )
-
-    main(max_iter=100000)
+    for i in [2000,5000,10000,20000]:
+        max_iter = i
+        main(max_iter)

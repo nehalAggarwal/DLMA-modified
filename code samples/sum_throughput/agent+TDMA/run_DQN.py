@@ -1,5 +1,5 @@
-from environment import ENVIRONMENT
-from DQN_brain import DQN
+#from environment import ENVIRONMENT
+#from DQN_brain import DQN
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -66,5 +66,6 @@ if __name__ == "__main__":
                     epsilon_decay=0.995,
                     
                     )
-
-    main(max_iter=100000)
+    for i in [2000,5000,10000,20000]:
+        max_iter = i
+        main(max_iter)
